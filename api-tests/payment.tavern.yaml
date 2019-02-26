@@ -1,0 +1,264 @@
+---
+
+########## PAYMENT CREATION ##########
+
+test_name: Can create payments
+  - name: Create a payment through the API
+    request:
+      url: http://127.0.0.1:8080/payments
+      method: POST
+      body: &payment
+        beneficiary: 123
+        debtor: 122
+        amount: 12.23
+        currency: "GBP"
+    response:
+      status_code: 200
+      body:
+        status: "ok"
+        data:
+          <<: *payment
+          id: !anyint
+
+---
+
+test_name: Cannot pass ID to payment on creation
+  - name: Create a payment and attempt to set its ID
+    request:
+      url: http://127.0.0.1:8080/payments
+      method: POST
+      body: &payment
+        id: 1
+        beneficiary: 123
+        debtor: 122
+        amount: 12.23
+        currency: "GBP"
+    response:
+      status_code: 200
+      body:
+        status: "ok"
+        data:
+          <<: *payment
+          id: 2 # ID is automatically assigned despite our attempt
+
+---
+
+test_name: Creating a payment with non-number amounts trigger error
+  - name: Create payment with a non-number
+    request:
+      url: http://127.0.0.1:8080/payments
+      method: POST
+      body: &payment
+        beneficiary: 123
+        debtor: 122
+        amount: "foobar"
+        currency: "GBP"
+    response:
+      status_code: 400
+      body:
+        status: "error"
+        error_info: "invalid payment amount"
+
+---
+
+########## UPDATING ##########
+
+test_name: Can update a payment
+  - name: Update a payment succeeds
+    request:
+      url: http://127.0.0.1:8080/payments/1
+      method: PUT
+      body:
+        amount: 23.23
+    response:
+      status_code: 200
+      body:
+        status: "ok"
+        data:
+          id: 1
+          beneficiary: 123
+          debtor: 122
+          amount: 23.23
+          currency: "GBP"
+
+---
+
+test_name: Cannot update a non-existent payment
+  - name: Update a non-existent payment fails
+    request:
+      url: http://127.0.0.1:8080/payments/1337
+      method: PUT
+      body:
+        amount: 23.23
+    response:
+      status_code: 404
+      body:
+        status: "error"
+        error_info: "payment resource not found"
+
+
+---
+
+test_name: Cannot update a payment with invalid amount
+  - name: Update a payment with invalid amount
+    request:
+      url: http://127.0.0.1:8080/payments/1
+      method: PUT
+      body:
+        amount: "foobar"
+    response:
+      status_code: 400
+      body:
+        status: "error"
+        error_info: "invalid payment amount"
+
+---
+
+########## GET SINGLE PAYMENT ##########
+
+test_name: Retrieve a payment resource
+
+stages:
+  - name: Retrieve a single payment resource
+    request:
+      url: http://127.0.0.1:8080/payments/1
+      method: GET
+    response:
+      status_code: 200
+      body:
+        status: "ok"
+        data:
+          id: 1
+          beneficiary: 123
+          debtor: 122
+          amount: 100
+          currency: "GBP"
+
+---
+
+test_name: Retrieving a non-existent payment resource fails
+
+stages:
+  - name: Attempt to retrieve a non-existent resource
+    request:
+      url: http://127.0.0.1:8080/payments/2
+      method: GET
+    response:
+      status_code: 404
+      body:
+        status: "payment resource not found"
+
+---
+
+test_name: Retrieving an invalid payment resource ID emits an error
+
+stages:
+  - name: Attempt to retrieve an invalid payment resource ID
+    request:
+      url: http://127.0.0.1:8080/payments/foobar
+      method: GET
+    response:
+      status_code: 400
+      body:
+        status: "error"
+        error_info: "invalid payment resource ID"
+
+
+---
+
+########## DELETION ##########
+
+test_name: Cannot delete non-existent payment
+  - name: Delete a non-existent payment
+    request:
+      url: http://127.0.0.1:8080/payments/1337
+      method: DELETE
+    response:
+      status_code: 404
+      body:
+        status: "error"
+        error_info: "payment resource not found"
+
+---
+
+test_name: Deleting a payment resource succeeds
+  - name: Delete a payment resource
+    request:
+      url: http://127.0.0.1:8080/payments/1
+      method: DELETE
+    response:
+      status_code: 200
+      body:
+        status: "ok"
+
+  - name: Verify that payment resource was deleted
+    request:
+      url: http://127.0.0.1:8080/payments/1
+      method: GET
+    response:
+      status_code: 404
+
+---
+
+########## GET PAYMENT COLLECTION ##########
+
+test_name: List payments with no payments yields an empty array
+
+stages:
+  - name: Retrieve empty payments
+    request:
+      url: http://127.0.0.1:8080/payments
+      method: GET
+    response:
+      status_code: 200
+      body:
+        status: "ok"
+        data: []
+
+---
+
+test_name: List payments works as expected
+
+stages:
+  - name: Create a payment1
+    request:
+      url: http://127.0.0.1:8080/payments
+      method: POST
+      body: &payment1
+        beneficiary: 123
+        debtor: 122
+        amount: 12.23
+        currency: "GBP"
+    response:
+      status_code: 200
+      save:
+          body:
+            payment1_id: id
+
+  - name: Create a payment2
+    request:
+      url: http://127.0.0.1:8080/payments
+      method: POST
+      body: &payment2
+        beneficiary: 123
+        debtor: 122
+        amount: 12.23
+        currency: "GBP"
+    response:
+      status_code: 200
+      save:
+          body:
+            payment2_id: id
+
+  - name: List payments
+    request:
+      url: http://127.0.0.1:8080/payments
+      method: GET
+    response:
+      status_code: 200
+      body:
+        data:
+          - <<: *payment1
+            id: *payment1_id
+          - <<: *payment2
+            id: *payment2_id
