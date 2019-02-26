@@ -1,103 +1,71 @@
 package api
 
 import (
-	"techtest-payments-api/api"
 	"testing"
 )
 
 func TestCreatePayment(t *testing.T) {
 	p := NewPaymentModel()
 
-	err := p.CreatePayment(&Payment{
-		Beneficiary: 123,
-		Debtor:      122,
-		Amount:      100.00,
-		Currency:    "GBP",
-	})
+	err := p.CreatePayment(NewPayment(123, 122, 100.00))
 
 	if err != nil {
-		t.Error("An error occured when creating a payment: %s", err)
+		t.Errorf("An error occured when creating a payment: %s", err)
 	}
 }
 
 func TestCreatePaymentAlreadyExists(t *testing.T) {
 	p := NewPaymentModel()
 
-	payment1 := &Payment{
-		Beneficiary: 123,
-		Debtor:      122,
-		Amount:      100.00,
-		Currency:    "GBP",
-	}
+	payment1 := NewPayment(123, 122, 100.00)
 
 	p.CreatePayment(payment1)
 	err := p.CreatePayment(payment1)
 
 	if err == nil {
 		t.Error("Saving a duplicate payment should result in an error")
-	} else if err != "Payment ID already exists" {
-		t.Error("Error when saving duplicate payment was not as expected")
 	}
 }
 
 func TestUpdatePayment(t *testing.T) {
 	p := NewPaymentModel()
 
-	payment := &Payment{
-		Beneficiary: 123,
-		Debtor:      122,
-		Amount:      123.23,
-		Currency:    "GBP",
-	}
+	payment := NewPayment(123, 122, 123.23)
 
 	p.CreatePayment(payment)
 
 	payment.Amount = 200.10
-	err = p.UpdatePayment(payment)
+	err := p.UpdatePayment(payment)
 
 	if err != nil {
-		t.Error("Failed updating payment")
+		t.Errorf("Failed updating payment; error: %s", err)
 	}
 }
 
 func TestUpdateInexistentPayment(t *testing.T) {
 	p := NewPaymentModel()
 
-	payment := &Payment{
-		Beneficiary: 123,
-		Debtor:      122,
-		Amount:      123.23,
-		Currency:    "GBP",
-	}
-
-	p.CreatePayment(payment)
+	payment := NewPayment(123, 122, 123.23)
 
 	payment.Amount = 200.10
-	err = p.UpdatePayment(payment)
+	err := p.UpdatePayment(payment)
 
 	if err == nil {
 		t.Error("Updating a non-existent payment should fail")
-	} else if err != "Inexistent payment" {
-		t.Error("Updating a non-existent payment should fail with the correct error")
 	}
 }
 
 func TestRetrievePayment(t *testing.T) {
 	p := NewPaymentModel()
 
-	payment := &Payment{
-		Beneficiary: 123,
-		Debtor:      122,
-		Amount:      123.23,
-		Currency:    "GBP",
-	}
+	payment1 := NewPayment(123, 122, 123.23)
 
-	p.CreatePayment(payment)
+	p.CreatePayment(payment1)
 
-	ok, payment2 := p.GetPaymentById(payment.Id)
+	payment2, err := p.GetPaymentById(payment1.Id)
 
-	if !ok {
-		t.Error("Failed to retrieve an existing payment")
+	if err != nil {
+		t.Errorf("Failed to retrieve an existing payment, error: %s", err)
 	}
 
 	if payment2.Id != payment1.Id {
@@ -108,38 +76,50 @@ func TestRetrievePayment(t *testing.T) {
 func TestRetrieveInexistentPayment(t *testing.T) {
 	p := NewPaymentModel()
 
-	ok, _ := p.GetPaymentById(1337)
+	_, err := p.GetPaymentById(1337)
 
-	if ok {
-		t.Error("Retrieving non-existent payment should fail")
+	if err != nil {
+		t.Errorf("Retrieving non-existent payment should fail, error: %s", err)
+	}
+}
+
+func TestRetrievePaymentCollection(t *testing.T) {
+	p := NewPaymentModel()
+
+	p.CreatePayment(NewPayment(1, 2, 100.00))
+
+	p.CreatePayment(NewPayment(2, 1, 50.00))
+
+	payments := p.GetPayments()
+
+	if len(payments) != 2 {
+		t.Error("Payments collection should contain 2 items")
 	}
 }
 
 func TestDeletePayment(t *testing.T) {
 	p := NewPaymentModel()
 
-	payment := &Payment{
-		Beneficiary: 123,
-		Debtor:      122,
-		Amount:      123.23,
-		Currency:    "GBP",
-	}
+	payment := NewPayment(123, 122, 123.23)
 
 	p.CreatePayment(payment)
 
 	err := p.DeletePayment(payment)
 
-	if err {
-		t.Error("Failed to delete an existing payment")
+	if err != nil {
+		t.Errorf("Failed to delete an existing payment, error: %s", err)
 	}
 }
 
 func TestDeleteInexistentPayment(t *testing.T) {
 	p := NewPaymentModel()
 
-	err := p.DeletePayment(1337)
+	payment := NewPayment(1, 2, 3)
+	payment.Id = 1337
 
-	if !err {
-		t.Error("Deleting an inexistent payment should fail")
+	err := p.DeletePayment(payment)
+
+	if err != nil {
+		t.Errorf("Deleting an inexistent payment should fail, error: %s", err)
 	}
 }
