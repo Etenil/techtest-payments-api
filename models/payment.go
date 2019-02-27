@@ -40,6 +40,10 @@ func NewPayment(beneficiary int, debtor int, amount float64) (payment *Payment) 
 
 // Saves a payment to the payment model store
 func (p *PaymentModel) CreatePayment(payment *Payment) (err error) {
+	if payment.Id != -1 {
+		err = fmt.Errorf("Cannot create existing payment")
+	}
+
 	var id int
 	id, p.sequence = p.sequence, p.sequence+1
 

@@ -78,8 +78,8 @@ func TestRetrieveInexistentPayment(t *testing.T) {
 
 	_, err := p.GetPaymentById(1337)
 
-	if err != nil {
-		t.Errorf("Retrieving non-existent payment should fail, error: %s", err)
+	if err == nil {
+		t.Errorf("Retrieving non-existent payment should fail")
 	}
 }
 
