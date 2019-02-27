@@ -16,6 +16,10 @@ type PaymentsApi struct {
 	paymentModel *models.PaymentModel
 }
 
+type ApiError struct {
+	Error string `json:"error"`
+}
+
 func main() {
 	log.Print("API started")
 
@@ -33,6 +37,12 @@ func accessLogMiddleware(next http.Handler) http.Handler {
 		log.Printf("%s %s ", r.Method, r.RequestURI)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func apiError(w http.ResponseWriter, s int, err string) {
+	log.Print(err)
+	w.WriteHeader(s)
+	json.NewEncoder(w).Encode(&ApiError{Error: err})
 }
 
 func (api *PaymentsApi) start() {
@@ -63,8 +73,8 @@ func (api *PaymentsApi) CreatePayment(w http.ResponseWriter, r *http.Request) {
 	json_err := json.NewDecoder(r.Body).Decode(&p)
 
 	if json_err != nil {
-		log.Printf("Error parsing payment data: %s", json_err)
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		apiError(w, http.StatusBadRequest, "error parsing payment data")
+		return
 	}
 
 	p.Id = -1
@@ -73,13 +83,12 @@ func (api *PaymentsApi) CreatePayment(w http.ResponseWriter, r *http.Request) {
 	err := api.paymentModel.CreatePayment(p)
 
 	if err != nil {
-		log.Printf("An error occured whilst creating a payment: %s", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		apiError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(p)
 }
 
@@ -87,7 +96,7 @@ func (api *PaymentsApi) ListPayments(w http.ResponseWriter, r *http.Request) {
 	p := api.paymentModel.GetPayments()
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(p)
 }
 
@@ -96,21 +105,19 @@ func (api *PaymentsApi) GetPayment(w http.ResponseWriter, r *http.Request) {
 	id, converr := strconv.Atoi(vars["id"])
 
 	if converr != nil {
-		log.Print("Invalid payment ID provided")
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		apiError(w, http.StatusBadRequest, "invalid payment id provided")
 		return
 	}
 
 	p, err := api.paymentModel.GetPaymentById(id)
 
 	if err != nil {
-		log.Printf("An error occured whilst creating a payment: %s", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		apiError(w, http.StatusNotFound, "payment resource not found")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(p)
 }
 
@@ -124,12 +131,18 @@ func (api *PaymentsApi) UpdatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var p *models.Payment
+	p, p_err := api.paymentModel.GetPaymentById(id)
+
+	if p_err != nil {
+		apiError(w, http.StatusNotFound, "payment resource not found")
+		return
+	}
+
 	json_err := json.NewDecoder(r.Body).Decode(&p)
 
 	if json_err != nil {
-		log.Printf("Error parsing payment data: %s", json_err)
-		http.Error(w, "Bad Request", http.StatusBadRequest)
+		apiError(w, http.StatusBadRequest, "invalid payment data")
+		return
 	}
 
 	p.Id = id
@@ -138,13 +151,12 @@ func (api *PaymentsApi) UpdatePayment(w http.ResponseWriter, r *http.Request) {
 	err := api.paymentModel.UpdatePayment(p)
 
 	if err != nil {
-		log.Printf("An error occured whilst creating a payment: %s", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		apiError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(p)
 }
 
@@ -161,8 +173,7 @@ func (api *PaymentsApi) DeletePayment(w http.ResponseWriter, r *http.Request) {
 	p, err := api.paymentModel.GetPaymentById(id)
 
 	if err != nil {
-		log.Printf("An error occured whilst creating a payment: %s", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		apiError(w, http.StatusNotFound, "payment resource not found")
 		return
 	}
 
@@ -170,5 +181,4 @@ func (api *PaymentsApi) DeletePayment(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(p)
 }
