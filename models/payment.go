@@ -1,4 +1,4 @@
-package api
+package models
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 // A basic payment structure, with JSON spec.
 type Payment struct {
-	Id          int     `json:"id,omitempty"`
+	Id          int     `json:"id"`
 	Beneficiary int     `json:"beneficiary"`
 	Debtor      int     `json:debtor`
 	Amount      float64 `json:amount`
@@ -29,7 +29,7 @@ func NewPaymentModel() (model *PaymentModel) {
 
 func NewPayment(beneficiary int, debtor int, amount float64) (payment *Payment) {
 	payment = &Payment{
-		Id:          0,
+		Id:          -1,
 		Beneficiary: beneficiary,
 		Debtor:      debtor,
 		Amount:      amount,
