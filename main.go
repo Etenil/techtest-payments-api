@@ -60,7 +60,12 @@ func (api *PaymentsApi) start() {
 
 func (api *PaymentsApi) CreatePayment(w http.ResponseWriter, r *http.Request) {
 	var p *models.Payment
-	_ = json.NewDecoder(r.Body).Decode(&p)
+	json_err := json.NewDecoder(r.Body).Decode(&p)
+
+	if json_err != nil {
+		log.Printf("Error parsing payment data: %s", json_err)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+	}
 
 	p.Id = -1
 	p.Currency = "GBP"
@@ -120,7 +125,13 @@ func (api *PaymentsApi) UpdatePayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var p *models.Payment
-	_ = json.NewDecoder(r.Body).Decode(&p)
+	json_err := json.NewDecoder(r.Body).Decode(&p)
+
+	if json_err != nil {
+		log.Printf("Error parsing payment data: %s", json_err)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+	}
+
 	p.Id = id
 	p.Currency = "GBP"
 
