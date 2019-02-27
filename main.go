@@ -73,6 +73,7 @@ func (api *PaymentsApi) CreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(p)
 }
@@ -80,6 +81,7 @@ func (api *PaymentsApi) CreatePayment(w http.ResponseWriter, r *http.Request) {
 func (api *PaymentsApi) ListPayments(w http.ResponseWriter, r *http.Request) {
 	p := api.paymentModel.GetPayments()
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(p)
 }
@@ -102,6 +104,7 @@ func (api *PaymentsApi) GetPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(p)
 }
@@ -129,6 +132,7 @@ func (api *PaymentsApi) UpdatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(p)
 }
@@ -153,6 +157,7 @@ func (api *PaymentsApi) DeletePayment(w http.ResponseWriter, r *http.Request) {
 
 	api.paymentModel.DeletePayment(p)
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(p)
 }

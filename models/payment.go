@@ -8,9 +8,9 @@ import (
 type Payment struct {
 	Id          int     `json:"id"`
 	Beneficiary int     `json:"beneficiary"`
-	Debtor      int     `json:debtor`
-	Amount      float64 `json:amount`
-	Currency    string  `json:currency`
+	Debtor      int     `json:"debtor"`
+	Amount      float64 `json:"amount"`
+	Currency    string  `json:"currency"`
 }
 
 // Payment model type. A wrapper around a slice really.
