@@ -1,5 +1,7 @@
 # techtest-payments-api
-A demo payments API in Go
+A demo payments API in Go.
+
+_Note: The Author learned Go in 2 days then produced this._
 
 ## Requirements
 
@@ -42,3 +44,4 @@ py.test apitests
 ```
 
 _Remember to stop and start the API before running the API tests!_
+
